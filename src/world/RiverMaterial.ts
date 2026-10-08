@@ -28,7 +28,7 @@ export class RiverMaterial {
         // Mid-stream Boulder Positions for procedural foam eddies
         uBoulder1: { value: new THREE.Vector2(3.5, -4.0) },
         uBoulder2: { value: new THREE.Vector2(-4.0, 6.0) },
-        uBoulder3: { value: new THREE.Vector2(-18.0, 0.5) },
+        uBoulder3: { value: new THREE.Vector2(-27.0, 28.0) },
         // Atmospheric Fog
         uFogColor: { value: new THREE.Color(0xb6cbd2) },
         uFogNear: { value: 45.0 },
@@ -131,10 +131,13 @@ export class RiverMaterial {
           float d2 = length(vWorldPosition.xz - uBoulder2);
           float d3 = length(vWorldPosition.xz - uBoulder3);
 
-          // Contact foam collar around boulders
-          float boulderCollar = smoothstep(3.2, 1.4, d1) * 0.85 +
-                                smoothstep(2.8, 1.2, d2) * 0.85 +
-                                smoothstep(4.2, 2.0, d3) * 0.70;
+          // Contact foam collar hugging boulder waterlines with painterly noise
+          float collarNoise = noise(vWorldPosition.xz * 1.8 + vec2(uTime * 0.6, -uTime * 0.8));
+          float boulderCollar = (
+            smoothstep(2.2, 0.6, d1) * 0.85 +
+            smoothstep(2.0, 0.6, d2) * 0.85 +
+            smoothstep(3.0, 1.4, d3) * 0.70
+          ) * (0.35 + 0.65 * collarNoise);
 
           // Downstream eddy wake streaming towards bottom-left (-X, +Z)
           vec2 wakeDir = normalize(vec2(-1.0, 1.0));
@@ -149,7 +152,7 @@ export class RiverMaterial {
           float wake2 = smoothstep(6.0, 0.0, wake2Dist) * smoothstep(1.6, 0.2, wake2Perp) * step(0.0, wake2Dist);
 
           float eddyNoise = noise(vec2(vUv.x * 8.0 + uTime * 0.5, vFlow * 6.0));
-          float totalBoulderFoam = (boulderCollar + (wake1 + wake2) * 0.7) * (0.7 + 0.3 * eddyNoise);
+          float totalBoulderFoam = (boulderCollar * 0.9 + (wake1 + wake2) * 0.6) * (0.5 + 0.5 * eddyNoise);
 
           // 5. Rapids White-Water Foam Trails in Active Upstream Chute
           float rapidsNoise = noise(vec2(vUv.x * 5.0, vFlow * 5.5));
