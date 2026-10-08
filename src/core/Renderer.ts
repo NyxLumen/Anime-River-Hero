@@ -27,7 +27,7 @@ export class Renderer {
 
     // Shadow mapping
     this.instance.shadowMap.enabled = true;
-    this.instance.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.instance.shadowMap.type = THREE.PCFShadowMap;
   }
 
   public resize(width: number, height: number): void {

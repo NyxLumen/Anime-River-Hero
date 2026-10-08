@@ -16,23 +16,94 @@ export class Environment {
   }
 
   /**
+   * Generates an organic, asymmetrical, flattened anime foliage cushion.
+   * Uses indexed SphereGeometry so normals are completely smooth,
+   * eliminating all faceted low-poly game artifacts.
+   */
+  private createOrganicFoliageLobe(
+    radius: number,
+    baseColorHex: number,
+    sunlitColorHex: number,
+    shadowColorHex: number,
+    seed: number
+  ): THREE.BufferGeometry {
+    // 18 x 14 segments provides smooth continuous curvature without heavy vertex count
+    const geo = new THREE.SphereGeometry(radius, 18, 14);
+    const pos = geo.attributes.position;
+    const vertexCount = pos.count;
+    const v = new THREE.Vector3();
+    const colors = new Float32Array(vertexCount * 3);
+
+    const baseCol = new THREE.Color(baseColorHex);
+    const sunlitCol = new THREE.Color(sunlitColorHex);
+    const shadowCol = new THREE.Color(shadowColorHex);
+    const sunDir = new THREE.Vector3(38, 50, -38).normalize();
+    const tempCol = new THREE.Color();
+
+    for (let i = 0; i < vertexCount; i++) {
+      v.fromBufferAttribute(pos, i);
+
+      // Flatten in Y to produce layered anime cloud-like canopy cushions
+      v.y *= 0.60;
+
+      // Organic asymmetrical horizontal swells
+      const angle = Math.atan2(v.z, v.x);
+      const horizontalNoise =
+        Math.sin(angle * 3.0 + seed) * 0.16 +
+        Math.cos(angle * 2.0 + seed * 1.5) * 0.12;
+
+      v.x *= 1.0 + horizontalNoise;
+      v.z *= 1.0 + horizontalNoise;
+
+      // Subtle vertical organic distortion
+      v.y += Math.sin(v.x * 2.0 + v.z * 2.0 + seed) * 0.08 * radius;
+
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+
+    // Smooth averaged normals across indexed triangles
+    geo.computeVertexNormals();
+    const normAttr = geo.attributes.normal;
+    const norm = new THREE.Vector3();
+
+    // Compute painterly anime volumetric light gradient
+    for (let i = 0; i < vertexCount; i++) {
+      norm.fromBufferAttribute(normAttr, i);
+      const sunFactor = norm.dot(sunDir);
+
+      tempCol.copy(baseCol);
+      // Soft cool shadow on underside
+      tempCol.lerp(shadowCol, THREE.MathUtils.clamp((-sunFactor + 0.25) * 0.75, 0, 1));
+      // Warm sunlit highlight on upper sun-facing lobes
+      tempCol.lerp(sunlitCol, THREE.MathUtils.clamp((sunFactor - 0.1) * 0.85, 0, 1));
+
+      colors[i * 3] = tempCol.r;
+      colors[i * 3 + 1] = tempCol.g;
+      colors[i * 3 + 2] = tempCol.b;
+    }
+
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    return geo;
+  }
+
+  /**
    * Foreground Layer:
-   * Dark, saturated conifer silhouettes in the bottom-right corner.
-   * Kept strictly at the corner edge to frame without obstructing.
+   * Layered organic conifer boughs in the bottom-right corner.
+   * Completely smooth shading, eliminating cone facets.
    */
   private createForegroundFraming(): void {
     const fgGroup = new THREE.Group();
     fgGroup.name = 'ForegroundFraming';
 
     const fgFoliageMat = new THREE.MeshStandardMaterial({
-      color: 0x1a362a, // Saturated dark forest evergreen
-      roughness: 0.85,
-      metalness: 0.04,
-      flatShading: true,
+      vertexColors: true,
+      roughness: 0.86,
+      metalness: 0.03,
+      flatShading: false,
     });
 
     const fgTrunkMat = new THREE.MeshStandardMaterial({
-      color: 0x221a14,
+      color: 0x1f1814,
       roughness: 0.95,
     });
 
@@ -41,29 +112,36 @@ export class Environment {
       tree.position.set(x, y, z);
       tree.scale.setScalar(scale);
 
-      const trunkGeo = new THREE.CylinderGeometry(0.35, 0.65, 6.0, 6);
+      const trunkGeo = new THREE.CylinderGeometry(0.35, 0.65, 6.0, 10);
       const trunk = new THREE.Mesh(trunkGeo, fgTrunkMat);
       trunk.position.y = 3.0;
       trunk.castShadow = true;
       tree.add(trunk);
 
+      // 5 Tiered organic drooping skirts
       const tiers = 5;
       for (let t = 0; t < tiers; t++) {
-        const coneRadius = 2.8 - t * 0.45;
-        const coneHeight = 3.6 - t * 0.4;
-        const coneGeo = new THREE.ConeGeometry(coneRadius, coneHeight, 7);
-        const cone = new THREE.Mesh(coneGeo, fgFoliageMat);
-        cone.position.y = 4.2 + t * 2.0;
-        cone.rotation.y = t * 0.7;
-        cone.castShadow = true;
-        cone.receiveShadow = true;
-        tree.add(cone);
+        const tierRadius = 2.6 - t * 0.40;
+        const tierLobeGeo = this.createOrganicFoliageLobe(
+          tierRadius,
+          0x183428, // Deep muted forest green
+          0x2c5440, // Sunlit needle tips
+          0x0f2219, // Deep shadowy underside
+          t * 1.7 + x * 0.1
+        );
+
+        const tierMesh = new THREE.Mesh(tierLobeGeo, fgFoliageMat);
+        tierMesh.position.y = 4.0 + t * 1.9;
+        tierMesh.rotation.y = t * 0.8;
+        tierMesh.castShadow = true;
+        tierMesh.receiveShadow = true;
+        tree.add(tierMesh);
       }
 
       return tree;
     };
 
-    // Positioned strictly in the bottom-right corner
+    // Positioned strictly in the bottom-right periphery
     fgGroup.add(createPineTree(40, 10.0, 38, 3.2));
     fgGroup.add(createPineTree(48, 14.0, 40, 3.8));
     fgGroup.add(createPineTree(34, 6.0, 46, 2.8));
@@ -75,37 +153,42 @@ export class Environment {
   /**
    * Midground Trees:
    * Stylized anime foliage trees on the left meadow plateau
-   * with cherry blossom accents and right-bank warm autumn foliage (matching Reference.png).
+   * with organic layered cushions and painterly lighting gradients.
    */
   private createMidgroundTrees(): void {
     const treesGroup = new THREE.Group();
     treesGroup.name = 'MidgroundTrees';
 
-    const foliageMatGreen = new THREE.MeshStandardMaterial({
-      color: 0x689a44, // Warm anime green
-      roughness: 0.82,
-      metalness: 0.04,
-      flatShading: true,
-    });
-
-    const foliageMatSakura = new THREE.MeshStandardMaterial({
-      color: 0xf8becc, // Pastel cherry blossom pink
-      roughness: 0.80,
+    const foliageSharedMaterial = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.84,
       metalness: 0.03,
-      flatShading: true,
-    });
-
-    const foliageMatAutumn = new THREE.MeshStandardMaterial({
-      color: 0xd6803c, // Warm amber / orange autumn foliage (seen on right bank in Reference.png)
-      roughness: 0.82,
-      metalness: 0.04,
-      flatShading: true,
+      flatShading: false, // Smooth painterly shading, no d20 facets!
     });
 
     const woodMat = new THREE.MeshStandardMaterial({
-      color: 0x4f4032,
+      color: 0x483a2e,
       roughness: 0.9,
     });
+
+    // Curated natural anime palettes
+    const treePalettes = {
+      green: {
+        base: 0x6e9646,   // Warm natural anime olive-green
+        sunlit: 0x9ec468, // Golden sunlight highlight
+        shadow: 0x3d5a2c, // Cool shaded green
+      },
+      sakura: {
+        base: 0xebb4c2,   // Soft pastel cherry blossom
+        sunlit: 0xfde2e8, // Warm sunlit petal highlight
+        shadow: 0xa87082, // Cool plum/mauve shadow
+      },
+      autumn: {
+        base: 0xd07c38,   // Warm autumn amber / ochre
+        sunlit: 0xf2a456, // Golden sunlit amber
+        shadow: 0x7e3c1c, // Rich russet shadow
+      },
+    };
 
     const createAnimeTree = (
       x: number,
@@ -118,28 +201,30 @@ export class Environment {
       tree.position.set(x, y, z);
       tree.scale.setScalar(scale);
 
-      const trunkGeo = new THREE.CylinderGeometry(0.35, 0.65, 5.0, 6);
+      const trunkGeo = new THREE.CylinderGeometry(0.35, 0.65, 5.0, 10);
       const trunk = new THREE.Mesh(trunkGeo, woodMat);
       trunk.position.y = 2.5;
       trunk.castShadow = true;
       tree.add(trunk);
 
-      const folMat = type === 'sakura' ? foliageMatSakura : type === 'autumn' ? foliageMatAutumn : foliageMatGreen;
-      const puffOffsets = [
-        [0, 5.0, 0, 2.3],
-        [-1.0, 4.4, 0.7, 1.7],
-        [1.0, 4.6, -0.6, 1.6],
-        [0.2, 5.8, 0.5, 1.5],
-        [-0.6, 5.3, -0.8, 1.4],
+      const pal = treePalettes[type];
+
+      // Layered organic cloud lobes arranged like painterly foliage masses
+      const lobes = [
+        { ox: 0.0, oy: 5.2, oz: 0.0, r: 2.3, seed: 1.1 },
+        { ox: -1.0, oy: 4.5, oz: 0.6, r: 1.8, seed: 2.4 },
+        { ox: 0.9, oy: 4.7, oz: -0.5, r: 1.7, seed: 3.7 },
+        { ox: 0.2, oy: 6.0, oz: 0.4, r: 1.6, seed: 4.9 },
+        { ox: -0.5, oy: 5.5, oz: -0.7, r: 1.5, seed: 5.8 },
       ];
 
-      puffOffsets.forEach(([px, py, pz, pr]) => {
-        const puffGeo = new THREE.DodecahedronGeometry(pr, 1);
-        const puff = new THREE.Mesh(puffGeo, folMat);
-        puff.position.set(px, py, pz);
-        puff.castShadow = true;
-        puff.receiveShadow = true;
-        tree.add(puff);
+      lobes.forEach((l) => {
+        const lobeGeo = this.createOrganicFoliageLobe(l.r, pal.base, pal.sunlit, pal.shadow, l.seed);
+        const lobeMesh = new THREE.Mesh(lobeGeo, foliageSharedMaterial);
+        lobeMesh.position.set(l.ox, l.oy, l.oz);
+        lobeMesh.castShadow = true;
+        lobeMesh.receiveShadow = true;
+        tree.add(lobeMesh);
       });
 
       return tree;
@@ -152,7 +237,7 @@ export class Environment {
     treesGroup.add(createAnimeTree(-20, 4.2, -4, 1.6, 'green'));     // Lower meadow tree
     treesGroup.add(createAnimeTree(-24, 3.8, 8, 1.8, 'green'));
 
-    // Right hillside trees with warm autumn/amber accents matching Reference.png!
+    // Right hillside trees with warm autumn/amber accents matching Reference.png
     treesGroup.add(createAnimeTree(28, 12.0, -10, 2.6, 'autumn'));
     treesGroup.add(createAnimeTree(36, 15.0, -20, 3.0, 'green'));
     treesGroup.add(createAnimeTree(28, 9.0, 8, 2.5, 'autumn'));
@@ -222,8 +307,8 @@ export class Environment {
       new THREE.Vector3(-13, 3.4, 2),
     ];
 
-    const postGeo = new THREE.CylinderGeometry(0.12, 0.15, 1.5, 5);
-    const railGeo = new THREE.CylinderGeometry(0.08, 0.08, 5.2, 4);
+    const postGeo = new THREE.CylinderGeometry(0.12, 0.15, 1.5, 8);
+    const railGeo = new THREE.CylinderGeometry(0.08, 0.08, 5.2, 8);
     railGeo.rotateZ(Math.PI / 2);
 
     for (let i = 0; i < posts.length; i++) {
@@ -259,7 +344,7 @@ export class Environment {
     const stoneMat = new THREE.MeshStandardMaterial({
       color: 0x948f84,
       roughness: 0.85,
-      flatShading: true,
+      flatShading: false,
     });
 
     const stonePositions = [
@@ -270,7 +355,7 @@ export class Environment {
     ];
 
     stonePositions.forEach((pos, idx) => {
-      const geo = new THREE.CylinderGeometry(1.2 - idx * 0.12, 1.4 - idx * 0.12, 0.45, 6);
+      const geo = new THREE.CylinderGeometry(1.2 - idx * 0.12, 1.4 - idx * 0.12, 0.45, 12);
       const stone = new THREE.Mesh(geo, stoneMat);
       stone.position.copy(pos);
       stone.rotation.y = idx * 0.7;
@@ -293,7 +378,7 @@ export class Environment {
     const mistMat = new THREE.MeshBasicMaterial({
       color: 0xeff5f8,
       transparent: true,
-      opacity: 0.36,
+      opacity: 0.28,
       depthWrite: false,
     });
 
@@ -304,7 +389,7 @@ export class Environment {
     ];
 
     mistSpheres.forEach((m) => {
-      const geo = new THREE.SphereGeometry(m.r, 12, 8);
+      const geo = new THREE.SphereGeometry(m.r, 16, 12);
       const mesh = new THREE.Mesh(geo, mistMat);
       mesh.position.set(m.x, m.y, m.z);
       mesh.scale.set(1.4, 0.45, 1.0);

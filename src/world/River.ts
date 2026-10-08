@@ -41,10 +41,10 @@ export class River {
     // 3. Generate Submerged Riverbed Mesh
     const bedRibbon = createRiverRibbonGeometry(this.splineConfigs, 180, 28, true);
     const bedMaterial = new THREE.MeshStandardMaterial({
-      color: 0x1a3830, // Deep jade & dark mossy riverbed silt
-      roughness: 0.92,
-      metalness: 0.04,
-      flatShading: true,
+      color: 0x16342b, // Deep natural teal & dark mossy riverbed silt
+      roughness: 0.94,
+      metalness: 0.03,
+      flatShading: false,
     });
     this.bedMesh = new THREE.Mesh(bedRibbon.geometry, bedMaterial);
     this.bedMesh.position.y -= 0.25;
