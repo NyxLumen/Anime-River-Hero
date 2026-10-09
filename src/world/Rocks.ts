@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Terrain } from './Terrain';
+import { HeroRock } from './HeroRock';
 
 export type RockMaterialFamily = 'warmGranite' | 'coolSlate' | 'paleRiverStone' | 'mossStone' | 'wetRiverRock';
 
@@ -430,6 +431,13 @@ export class Rocks {
       const tInfo = this.terrain.getHeightAt(cfg.x, cfg.z);
       const groundY = tInfo.y + (cfg.yOffset ?? 0);
       const family = cfg.family ?? (cfg.type === 'hero' ? 'warmGranite' : 'paleRiverStone');
+
+      // Phase 3B.1: Replace Hero 1 (Guardian Monolith) with authored anime asset
+      if (cfg.type === 'hero' && cfg.variant === 0) {
+        const authoredMesh = HeroRock.createMesh(cfg, groundY);
+        this.group.add(authoredMesh);
+        return;
+      }
 
       let geo: THREE.BufferGeometry;
 
