@@ -22,7 +22,7 @@ export class RiverMaterial {
         // Rich vibrant teal, sparkling turquoise, clear sunlit jade shallows, creamy white foam
         uDeepColor: { value: new THREE.Color(0x0e4756) },     // Deep rich oceanic slate-teal
         uMidColor: { value: new THREE.Color(0x1a7886) },      // Sparkling vibrant anime turquoise
-        uShallowColor: { value: new THREE.Color(0x34a896) },  // Clear sunlit translucent jade shallows
+        uShallowColor: { value: new THREE.Color(0x3cbfa8) },  // Clear sunlit translucent jade shallows
         uFoamColor: { value: new THREE.Color(0xf6fbf8) },     // Creamy crisp white painterly foam
         uSunGlintColor: { value: new THREE.Color(0xfff3d2) }, // Warm pale gold sunlight reflection
         // River boulder coordinates for procedural waterline collars and wakes
@@ -112,9 +112,9 @@ export class RiverMaterial {
 
         void main() {
           // 1. Natural Water Depth Gradient (deep oceanic teal -> rich turquoise -> sunlit jade shallows)
-          float depthFactor = smoothstep(0.02, 0.72, vBankDist);
-          vec3 waterBase = mix(uShallowColor, uMidColor, smoothstep(0.0, 0.42, depthFactor));
-          waterBase = mix(waterBase, uDeepColor, smoothstep(0.35, 0.88, depthFactor));
+          float depthFactor = smoothstep(0.04, 0.82, vBankDist);
+          vec3 waterBase = mix(uShallowColor, uMidColor, smoothstep(0.08, 0.52, depthFactor));
+          waterBase = mix(waterBase, uDeepColor, smoothstep(0.42, 0.90, depthFactor));
 
           // 2. Longitudinal Anime Streamlines (flowing downstream with current)
           // 2. Longitudinal Anime Streamlines (flowing downstream with current)
@@ -236,10 +236,13 @@ export class RiverMaterial {
           float fogFactor = clamp((camDist - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
           finalColor = mix(finalColor, uFogColor, fogFactor * 0.60);
 
-          // Translucent jade shallows revealing riverbed stones, deep saturation in pool center
-          float alpha = mix(0.55, 0.96, smoothstep(0.03, 0.55, vBankDist));
-          if (totalFoam > 0.3) {
-            alpha = mix(alpha, 0.98, smoothstep(0.3, 0.8, totalFoam));
+          // Controlled Depth & Shoreline Transparency Gradient
+          // Moderately translucent sunlit jade shallows reveal riverbed details; deep center channel retains rich oceanic opacity
+          float shoreRamp = smoothstep(0.0, 0.08, vBankDist);
+          float channelDepth = smoothstep(0.10, 0.72, vBankDist);
+          float alpha = mix(0.18, 0.96, channelDepth) * mix(0.80, 1.0, shoreRamp);
+          if (totalFoam > 0.18) {
+            alpha = mix(alpha, 0.96, smoothstep(0.18, 0.65, totalFoam));
           }
 
           gl_FragColor = vec4(finalColor, alpha);
