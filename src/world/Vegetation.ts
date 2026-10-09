@@ -97,17 +97,17 @@ export class Vegetation {
    * Layered painterly tufts of grass across the left meadow plateau.
    */
   private createMeadowGrass(): void {
-    const count = 1200;
+    const count = 4200;
 
-    // Grass clump with 4 curved blades
+    // Grass clump with 5 curved painterly blades
     const geometry = new THREE.BufferGeometry();
     const vertices: number[] = [];
     const normals: number[] = [];
 
-    for (let b = 0; b < 4; b++) {
-      const angle = (b / 4) * Math.PI * 2 + (seededRandom(b * 3.7) - 0.5) * 0.4;
-      const r = 0.08;
-      const h = 0.42 + seededRandom(b * 7.1) * 0.30;
+    for (let b = 0; b < 5; b++) {
+      const angle = (b / 5) * Math.PI * 2 + (seededRandom(b * 3.7) - 0.5) * 0.45;
+      const r = 0.09;
+      const h = 0.45 + seededRandom(b * 7.1) * 0.35;
 
       const bx = Math.cos(angle) * r;
       const bz = Math.sin(angle) * r;
@@ -116,25 +116,25 @@ export class Vegetation {
       vertices.push(-bx, 0, -bz);
       vertices.push(bx, 0, bz);
       // Tip with gentle natural curve
-      const tipX = bx * 2.2 + (seededRandom(b * 11.3) - 0.5) * 0.20;
-      const tipZ = bz * 2.2 + (seededRandom(b * 13.7) - 0.5) * 0.20;
+      const tipX = bx * 2.4 + (seededRandom(b * 11.3) - 0.5) * 0.22;
+      const tipZ = bz * 2.4 + (seededRandom(b * 13.7) - 0.5) * 0.22;
       vertices.push(tipX, h, tipZ);
 
       const nx = Math.cos(angle);
       const nz = Math.sin(angle);
-      normals.push(nx, 0.6, nz);
-      normals.push(nx, 0.6, nz);
-      normals.push(nx * 0.5, 0.8, nz * 0.5);
+      normals.push(nx, 0.7, nz);
+      normals.push(nx, 0.7, nz);
+      normals.push(nx * 0.5, 0.85, nz * 0.5);
     }
 
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
 
-    this.applyVegetationColors(geometry, 0xb8d46e, 0x729c48, 0x3d5a2c);
+    this.applyVegetationColors(geometry, 0xc8e66e, 0x7eb046, 0x345224);
 
     const material = new THREE.MeshStandardMaterial({
       vertexColors: true,
-      roughness: 0.88,
+      roughness: 0.86,
       metalness: 0.0,
       flatShading: false,
       side: THREE.DoubleSide,
@@ -147,28 +147,75 @@ export class Vegetation {
     const dummy = new THREE.Object3D();
     let placed = 0;
 
-    for (let i = 0; i < count * 3 && placed < count; i++) {
+    // Left meadow tree coordinates for understory clustering
+    const treeCenters = [
+      { x: -24, z: -19, r: 6.0 }, // Sakura over cottage
+      { x: -32, z: -14, r: 5.6 }, // Sakura grove slope
+      { x: -16, z: -25, r: 5.2 }, // Broadleaf behind cottage
+      { x: -21, z: -4,  r: 5.8 }, // Lower meadow oak
+      { x: -25, z: 8,   r: 5.5 }, // Terrace oak
+    ];
+
+    for (let i = 0; i < count * 5 && placed < count; i++) {
       const x = -54 + seededRandom(i * 1.7) * 58;
       const z = -46 + seededRandom(i * 2.9) * 94;
 
       const info = this.terrain.getHeightAt(x, z);
 
       if (info.isLeftSide && info.bankDist > 0.8 && z > -40) {
-        // Natural distribution: sparser on dirt trail core, denser on meadow swales
-        const pathLine = Math.abs((z + x * 0.48) - 1.5 + Math.sin(x * 0.12) * 2.0);
-        const inPathCore = pathLine < 1.3 && info.bankDist > 4.5 && info.bankDist < 26.0;
+        // Country trail clearance from cottage to river stepping stones
+        const pathLine = Math.abs(z - (2.05 * x + 25.0));
+        const inPathCore = pathLine < 1.10 && x >= -21.5 && x <= -9.0;
+        if (inPathCore) continue;
 
-        if (!inPathCore) {
-          const noise = this.hash2d(x * 0.35, z * 0.35);
-          if (noise > 0.20) {
-            dummy.position.set(x, info.y - 0.02, z);
-            dummy.rotation.y = seededRandom(i * 5.3) * Math.PI * 2;
-            const scale = 0.85 + seededRandom(i * 7.1) * 0.60;
-            dummy.scale.set(scale, scale, scale);
-            dummy.updateMatrix();
-            mesh.setMatrixAt(placed, dummy.matrix);
-            placed++;
+        // Intentional Density Zones:
+        // 1. Tree understory zone
+        let inUnderstory = false;
+        for (let t = 0; t < treeCenters.length; t++) {
+          const tc = treeCenters[t];
+          const dist = Math.sqrt((x - tc.x) ** 2 + (z - tc.z) ** 2);
+          if (dist > 1.0 && dist < tc.r) {
+            inUnderstory = true;
+            break;
           }
+        }
+
+        // 2. Natural meadow swale density
+        const swaleDensity = Math.sin(x * 0.12 + z * 0.08) * 0.5 + Math.cos(x * 0.07 - z * 0.14) * 0.5;
+
+        // 3. Cut-bank riparian fringe
+        const isRiparianBank = info.bankDist >= 1.0 && info.bankDist <= 3.8;
+
+        // Accept if in an intentional density zone or moderate open meadow
+        const accept =
+          inUnderstory ||
+          isRiparianBank ||
+          swaleDensity > -0.05 ||
+          seededRandom(i * 4.3) > 0.45;
+
+        if (accept) {
+          dummy.position.set(x, info.y - 0.02, z);
+          dummy.rotation.y = seededRandom(i * 5.3) * Math.PI * 2;
+          const scale = (inUnderstory || isRiparianBank ? 1.05 : 0.85) + seededRandom(i * 7.1) * 0.55;
+          dummy.scale.set(scale, scale, scale);
+          dummy.updateMatrix();
+          mesh.setMatrixAt(placed, dummy.matrix);
+
+          // Harmonize grass blade tone with underlying painterly terrain wash
+          const grassColor = new THREE.Color();
+          if (inUnderstory) {
+            grassColor.setHex(0x58843c); // Cool leafy shadow green
+          } else if (isRiparianBank) {
+            grassColor.setHex(0x789e44); // Riparian olive-amber fringe
+          } else if (swaleDensity > 0.25) {
+            grassColor.setHex(0x6e9c3e); // Muted olive swale
+          } else {
+            // Luminous warm golden-green clover pasture
+            grassColor.setHex(0x8ec448).lerp(new THREE.Color(0xa4d456), seededRandom(i * 8.3) * 0.45);
+          }
+          mesh.setColorAt(placed, grassColor);
+
+          placed++;
         }
       }
     }
@@ -181,6 +228,7 @@ export class Vegetation {
 
     mesh.count = placed;
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     this.group.add(mesh);
   }
 
@@ -241,10 +289,10 @@ export class Vegetation {
 
   /**
    * 3. Wildflowers:
-   * Delicate pastel blossoms clustered in the meadow, around cottage, and path edges.
+   * Clustered into natural organic drifting meadow flower patches (matching Reference.png).
    */
   private createWildflowers(): void {
-    const count = 500;
+    const count = 1600;
 
     const size = 0.16;
     const mergedGeom = new THREE.BufferGeometry();
@@ -277,22 +325,42 @@ export class Vegetation {
     // Soft sakura pink, sunny buttercup yellow, crisp warm ivory, subtle lavender
     const flowerColors = [0xebb4c2, 0xf6d878, 0xf5f0e6, 0xa69ec6];
 
+    // Intentional flower sanctuaries / drifting meadow swaths
+    const flowerSanctuaries = [
+      { x: -21, z: -13, r: 7.5 }, // Cottage garden verge
+      { x: -24, z: 2,   r: 8.5 }, // Sunny mid-meadow clover swale
+      { x: -14, z: -3,  r: 6.5 }, // Stepping stone approach
+      { x: -28, z: -10, r: 7.5 }, // Sakura slope terrace
+      { x: -26, z: 12,  r: 8.0 }, // Lower terrace
+      { x: -34, z: -4,  r: 7.0 }, // Upper meadow knoll
+    ];
+
     const dummy = new THREE.Object3D();
     const c = new THREE.Color();
     let placed = 0;
 
-    for (let i = 0; i < count * 3 && placed < count; i++) {
-      const x = -48 + seededRandom(i * 1.9) * 52;
+    for (let i = 0; i < count * 5 && placed < count; i++) {
+      const x = -52 + seededRandom(i * 1.9) * 56;
       const z = -44 + seededRandom(i * 3.1) * 88;
 
       const info = this.terrain.getHeightAt(x, z);
 
-      if (info.isLeftSide && info.bankDist > 1.0 && z > -38) {
-        const clusterNoise = this.hash2d(x * 0.35, z * 0.35);
-        if (clusterNoise > 0.42) {
+      if (info.isLeftSide && info.bankDist > 1.2 && z > -38) {
+        // Must be within one of the intentional flower sanctuaries
+        let inSanctuary = false;
+        for (let s = 0; s < flowerSanctuaries.length; s++) {
+          const fs = flowerSanctuaries[s];
+          const dist = Math.sqrt((x - fs.x) ** 2 + (z - fs.z) ** 2);
+          if (dist < fs.r) {
+            inSanctuary = true;
+            break;
+          }
+        }
+
+        if (inSanctuary) {
           dummy.position.set(x, info.y + 0.01, z);
           dummy.rotation.y = seededRandom(i * 4.9) * Math.PI * 2;
-          const scale = 0.75 + seededRandom(i * 6.7) * 0.65;
+          const scale = 0.82 + seededRandom(i * 6.7) * 0.65;
           dummy.scale.set(scale, scale, scale);
           dummy.updateMatrix();
           mesh.setMatrixAt(placed, dummy.matrix);

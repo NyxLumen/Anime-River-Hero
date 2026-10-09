@@ -12,40 +12,43 @@ export class Lighting {
 
     // 1. Warm Directional Sunlight (Late afternoon / Golden hour)
     // Warm pale gold sunlight casting soft shadows downriver
-    const sunColor = new THREE.Color(0xfff5dd);
-    this.sunLight = new THREE.DirectionalLight(sunColor, 1.55);
-    this.sunLight.position.set(38, 50, -38);
-    this.sunLight.target.position.set(-2, 0, -2);
+    const sunColor = new THREE.Color(0xfff3d6);
+    this.sunLight = new THREE.DirectionalLight(sunColor, 1.62);
+    // Position light source farther back along the afternoon sun ray to encompass distant canyon hills
+    this.sunLight.position.set(85, 112, -85);
+    this.sunLight.target.position.set(0, 0, 0);
 
     // Soft Shadow configuration for painterly anime transitions
     this.sunLight.castShadow = true;
     this.sunLight.shadow.mapSize.width = 2048;
     this.sunLight.shadow.mapSize.height = 2048;
-    this.sunLight.shadow.bias = -0.0002;
-    this.sunLight.shadow.radius = 4.0; // Soft penumbra filter
+    this.sunLight.shadow.bias = -0.0003;
+    this.sunLight.shadow.radius = 4.2; // Soft penumbra filter
 
-    const d = 70;
+    // Expand frustum to cover full visible scene and avoid harsh shadow box cutoffs
+    const d = 140;
     this.sunLight.shadow.camera.left = -d;
     this.sunLight.shadow.camera.right = d;
     this.sunLight.shadow.camera.top = d;
     this.sunLight.shadow.camera.bottom = -d;
-    this.sunLight.shadow.camera.near = 10;
-    this.sunLight.shadow.camera.far = 170;
+    this.sunLight.shadow.camera.near = 5;
+    this.sunLight.shadow.camera.far = 300;
+    this.sunLight.shadow.camera.updateProjectionMatrix();
 
     this.group.add(this.sunLight);
     this.group.add(this.sunLight.target);
 
-    // 2. Hemisphere Light (Soft pale blue-green sky + warm golden-olive ground bounce)
+    // 2. Hemisphere Light (Soft anime sky blue-teal + warm golden-olive ground bounce)
     // Generous ambient fill ensures shaded areas maintain luminous anime watercolor color
-    const skyColor = new THREE.Color(0x8eb6c8);    // Soft anime sky blue-green
-    const groundColor = new THREE.Color(0x6a7c4c); // Warm golden-olive bounce
-    this.hemiLight = new THREE.HemisphereLight(skyColor, groundColor, 1.40);
+    const skyColor = new THREE.Color(0x82b4cc);    // Soft anime sky blue-teal
+    const groundColor = new THREE.Color(0x6e8850); // Warm golden-olive bounce
+    this.hemiLight = new THREE.HemisphereLight(skyColor, groundColor, 1.55);
     this.hemiLight.position.set(0, 60, 0);
     this.group.add(this.hemiLight);
 
     // 3. Warm Ambient Fill
-    const ambientColor = new THREE.Color(0xfff2dc);
-    this.ambientLight = new THREE.AmbientLight(ambientColor, 0.42);
+    const ambientColor = new THREE.Color(0xfff0da);
+    this.ambientLight = new THREE.AmbientLight(ambientColor, 0.52);
     this.group.add(this.ambientLight);
   }
 }

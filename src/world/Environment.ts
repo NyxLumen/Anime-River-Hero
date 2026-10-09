@@ -119,16 +119,29 @@ export class Environment {
 
   /**
    * Atmospheric Foreground Mist:
-   * Soft clouds drifting over the corner trees.
+   * Soft hand-painted anime clouds drifting over the foreground framing trees.
    */
   private createAtmosphericMist(): void {
     const mistGroup = new THREE.Group();
     mistGroup.name = 'ForegroundMist';
 
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 64);
+    grad.addColorStop(0, 'rgba(255, 252, 246, 0.42)');
+    grad.addColorStop(0.55, 'rgba(236, 244, 248, 0.22)');
+    grad.addColorStop(1, 'rgba(220, 232, 240, 0.0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
+
+    const mistTex = new THREE.CanvasTexture(canvas);
+
     const mistMat = new THREE.MeshBasicMaterial({
-      color: 0xeff5f8,
+      map: mistTex,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.35,
       depthWrite: false,
     });
 

@@ -33,7 +33,8 @@ async function capture() {
   console.log('Waiting 3.5 seconds for shaders and scene render loop...');
   await new Promise((r) => setTimeout(r, 3500));
 
-  const screenshotPath = path.resolve(__dirname, '../screenshots/Phase1_Render.png');
+  const filename = process.argv[2] || 'Phase2_Render.png';
+  const screenshotPath = path.resolve(__dirname, `../screenshots/${filename}`);
   await page.screenshot({ path: screenshotPath });
   console.log('Screenshot saved to', screenshotPath);
 

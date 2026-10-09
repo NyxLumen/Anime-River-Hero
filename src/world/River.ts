@@ -35,21 +35,84 @@ export class River {
 
     this.riverMaterial = new RiverMaterial({ sunDirection });
     this.waterMesh = new THREE.Mesh(waterRibbon.geometry, this.riverMaterial.material);
+    this.waterMesh.renderOrder = 10;
     this.waterMesh.receiveShadow = true;
     this.group.add(this.waterMesh);
 
-    // 3. Generate Submerged Riverbed Mesh
+    // 3. Generate Submerged Riverbed Mesh with Painterly Stones & Silt
     const bedRibbon = createRiverRibbonGeometry(this.splineConfigs, 180, 28, true);
+    const bedTexture = this.createRiverbedTexture();
     const bedMaterial = new THREE.MeshStandardMaterial({
-      color: 0x16342b, // Deep natural teal & dark mossy riverbed silt
-      roughness: 0.94,
-      metalness: 0.03,
+      color: 0x3d5c4c, // Natural warm olive-teal & gravel bed
+      map: bedTexture,
+      roughness: 0.88,
+      metalness: 0.02,
       flatShading: false,
     });
     this.bedMesh = new THREE.Mesh(bedRibbon.geometry, bedMaterial);
-    this.bedMesh.position.y -= 0.25;
+    this.bedMesh.position.y -= 0.18; // Close to surface so shallows reveal riverbed
+    this.bedMesh.renderOrder = 1;
     this.bedMesh.receiveShadow = true;
     this.group.add(this.bedMesh);
+  }
+
+  private createRiverbedTexture(): THREE.CanvasTexture {
+    const size = 1024;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+
+    // Base warm olive-gray sand & gravel wash
+    ctx.fillStyle = '#2c4a3e';
+    ctx.fillRect(0, 0, size, size);
+
+    // Fine silt & sand ripple bands
+    for (let y = 0; y < size; y += 40) {
+      const grad = ctx.createLinearGradient(0, y, 0, y + 40);
+      grad.addColorStop(0, 'rgba(64, 88, 70, 0.4)');
+      grad.addColorStop(0.5, 'rgba(44, 68, 55, 0.2)');
+      grad.addColorStop(1, 'rgba(35, 55, 45, 0.4)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, y, size, 40);
+    }
+
+    // Varied water-worn river stones (buff, slate, warm grey, limestone, mossy)
+    const stoneColors = [
+      '#627a6c', '#7e9080', '#55685a', '#8a9c86', '#4e6256',
+      '#748274', '#989e8a', '#5f7062', '#869480', '#3e5246'
+    ];
+
+    for (let i = 0; i < 900; i++) {
+      const rx = (Math.sin(i * 13.7) * 0.5 + 0.5) * size;
+      const ry = (Math.cos(i * 19.1) * 0.5 + 0.5) * size;
+      const r = 5 + (i % 12) * 2.8;
+      const colIdx = i % stoneColors.length;
+
+      ctx.beginPath();
+      ctx.ellipse(rx, ry, r, r * 0.72, (i % 8) * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = stoneColors[colIdx];
+      ctx.fill();
+
+      // Soft sunlit pebble highlight
+      ctx.beginPath();
+      ctx.ellipse(rx - r * 0.22, ry - r * 0.22, r * 0.42, r * 0.32, (i % 8) * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(215, 230, 210, 0.32)';
+      ctx.fill();
+
+      // Shadow underside of stone
+      ctx.beginPath();
+      ctx.ellipse(rx + r * 0.15, ry + r * 0.2, r * 0.45, r * 0.22, (i % 8) * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(20, 35, 28, 0.45)';
+      ctx.fill();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2, 8);
+    texture.needsUpdate = true;
+    return texture;
   }
 
   public update(time: number, sunDir?: THREE.Vector3): void {
