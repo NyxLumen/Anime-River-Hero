@@ -50,30 +50,30 @@ export class Terrain {
     }
 
     // Curated Painterly Anime Palette (Studio Ghibli / Makoto Shinkai master reference)
-    const colMeadowGolden = new THREE.Color(0xdce868);  // Radiant sunlit golden-olive pasture
-    const colMeadowLush = new THREE.Color(0x84b246);    // Rich vibrant anime meadow green
-    const colMeadowWarm = new THREE.Color(0xadd456);    // Sunny clover patch / warm terrace
-    const colMeadowOlive = new THREE.Color(0x64863a);   // Muted olive swales & sheltered dips
-    const colMeadowDarkVeg = new THREE.Color(0x3a5626); // Dark rich vegetation hollows & moist ravines
-    const colTreeShadow = new THREE.Color(0x446432);    // Soft cool-olive tree shadow pools
-    const colBankCliff = new THREE.Color(0x8c806a);     // Exposed earthen cut-bank / silt strata
-    const colBankLedge = new THREE.Color(0xb8aa92);     // Sunlit earthen strata & rock ledge
-    const colRockSun = new THREE.Color(0xd0c4ae);       // Sunlit warm granite / sandstone ledges
-    const colRockShadow = new THREE.Color(0x4c5a52);    // Shaded slate / mossy cliff
-    const colShoreDamp = new THREE.Color(0x464034);     // Wet dark earth along cut-bank
-    const colShoreSilt = new THREE.Color(0x727668);     // Wet riverbank gravel & silt
-    const colPathDirt = new THREE.Color(0xd4b88e);      // Weathered anime countryside dirt trail core
-    const colPathEdge = new THREE.Color(0xa4966e);      // Grassy soil blend along path verge
-    const colDistanceHaze = new THREE.Color(0xa6c2cc);  // Atmospheric sky-mist distance fade
-    const colForegroundRich = new THREE.Color(0x1e3a24); // Rich dark foreground pine bluff base
+    const colMeadowGolden = new THREE.Color(0xb2be56);  // Warm sunlit golden pasture
+    const colMeadowLush = new THREE.Color(0x6e9638);    // Rich anime meadow green
+    const colMeadowWarm = new THREE.Color(0x8eac44);    // Sunny clover patch / warm terrace
+    const colMeadowOlive = new THREE.Color(0x5c7e30);   // Muted olive swales & sheltered dips
+    const colMeadowDarkVeg = new THREE.Color(0x324e20); // Dark rich vegetation hollows
+    const colTreeShadow = new THREE.Color(0x28421e);    // Soft cool-olive tree shadow pools
+    const colBankCliff = new THREE.Color(0x8a7e66);     // Gentle earthen bank slope
+    const colBankLedge = new THREE.Color(0xbab092);     // Sunlit earthen strata
+    const colRockSun = new THREE.Color(0xded2ba);       // Sunlit warm buff granite ledges
+    const colRockShadow = new THREE.Color(0x5a6c56);    // Shaded moss-dusted cliff ledge
+    const colShoreDamp = new THREE.Color(0x5c5444);     // Wet warm earth
+    const colShoreSilt = new THREE.Color(0x9c9480);     // Warm riverbank gravel & golden silt
+    const colPathDirt = new THREE.Color(0xd2b88e);      // Weathered anime countryside dirt trail
+    const colPathEdge = new THREE.Color(0xaa9e78);      // Grassy soil blend along path verge
+    const colDistanceHaze = new THREE.Color(0xaecad4);  // Atmospheric sky-mist distance fade
+    const colForegroundRich = new THREE.Color(0x22402a); // Rich dark foreground bluff base
 
     const sunDir = new THREE.Vector3(38, 50, -38).normalize();
     const tempColor = new THREE.Color();
 
     // Hand-curated tree shadow casters for left meadow (soft ambient occlusions)
     const treeShadowCenters = [
-      { x: -24 - 3.2, z: -19 + 3.4, radius: 5.6, strength: 0.35 }, // Sakura over cottage
-      { x: -32 - 3.2, z: -14 + 3.4, radius: 5.2, strength: 0.32 }, // Sakura grove slope
+      { x: -26 - 3.2, z: -22 + 3.4, radius: 5.4, strength: 0.32 }, // Sakura over cottage
+      { x: -34 - 3.2, z: -16 + 3.4, radius: 5.2, strength: 0.32 }, // Sakura grove slope
       { x: -16 - 3.0, z: -25 + 3.2, radius: 4.8, strength: 0.34 }, // Broadleaf behind cottage
       { x: -21 - 3.2, z: -4 + 3.4, radius: 5.2, strength: 0.35 },  // Lower meadow oak
       { x: -25 - 3.2, z: 8 + 3.4, radius: 5.0, strength: 0.32 },   // Terrace oak
@@ -113,26 +113,36 @@ export class Terrain {
       if (distToRiver < halfWidth + 0.9) {
         // Wet shoreline margin / submerged gravel shelf
         tempColor.copy(colShoreDamp).lerp(colShoreSilt, 0.5);
-      } else if (distToRiver < halfWidth + 3.8 && isLeftSide) {
-        // Carved cut-bank: naturally eroded earthen strata, gravel ledge, and moisture
-        const strataBlend = THREE.MathUtils.clamp((vy - info.sampleY) / 2.2, 0, 1);
-        tempColor.copy(colBankCliff).lerp(colMeadowOlive, strataBlend * 0.5);
+      } else if (distToRiver < halfWidth + 4.5 && isLeftSide) {
+        // Naturally sloping bank: gentle transition from shoreline to meadow
+        const strataBlend = THREE.MathUtils.clamp((vy - info.sampleY) / 1.5, 0, 1);
+        tempColor.copy(colBankCliff).lerp(colMeadowOlive, strataBlend * 0.65).lerp(colMeadowLush, strataBlend * strataBlend);
         if (sunFacing > 0.35) {
-          tempColor.lerp(colBankLedge, 0.45);
+          tempColor.lerp(colBankLedge, 0.40);
         }
       } else if (isLeftSide) {
-        // Left side: Large-scale painterly meadow variation
-        const pathLine = Math.abs((vz + vx * 0.48) - 1.5 + Math.sin(vx * 0.12) * 2.0);
-        const inPathCore = pathLine < 1.35 && bankDist > 4.5 && bankDist < 26.0;
-        const inPathVerge = pathLine >= 1.35 && pathLine < 2.4 && bankDist > 4.0 && bankDist < 27.0;
+        // Left side: Countryside dirt trail & painterly meadow variation
+        // Distance to country path connecting cottage (-21.5, -16.5) to stepping stones (-9.5, 5.5)
+        const pStartX = -21.5;
+        const pStartZ = -16.5;
+        const abX = -9.5 - pStartX;
+        const abZ = 5.5 - pStartZ;
+        const abLenSq = abX * abX + abZ * abZ;
+        const tPath = THREE.MathUtils.clamp(((vx - pStartX) * abX + (vz - pStartZ) * abZ) / abLenSq, 0, 1);
+        const nearPathX = pStartX + tPath * abX + Math.sin(tPath * Math.PI) * 1.2;
+        const nearPathZ = pStartZ + tPath * abZ;
+        const distToPath = Math.hypot(vx - nearPathX, vz - nearPathZ);
+
+        const inPathCore = distToPath < 1.45 && bankDist > 3.0 && bankDist < 28.0;
+        const inPathVerge = distToPath >= 1.45 && distToPath < 2.85 && bankDist > 2.5 && bankDist < 29.0;
 
         if (inPathCore) {
           tempColor.copy(colPathDirt);
-          if (sunFacing > 0.4) {
-            tempColor.offsetHSL(0.01, 0.03, 0.04);
+          if (sunFacing > 0.35) {
+            tempColor.lerp(colPathEdge, 0.25);
           }
         } else if (inPathVerge) {
-          const vergeFactor = (pathLine - 1.35) / 1.05;
+          const vergeFactor = (distToPath - 1.45) / 1.40;
           tempColor.copy(colPathEdge).lerp(colMeadowLush, vergeFactor);
         } else {
           // Macro regional zoning:
@@ -183,14 +193,14 @@ export class Terrain {
           }
         }
       } else {
-        // Right side: steep rocky bluff & forested terraces
-        if (isSteep) {
+        // Right side: rich forested hillside with mossy understory and warm granite outcrops
+        if (isSteep && vx > 36) {
           tempColor.copy(colRockShadow).lerp(colRockSun, sunFacing * 0.85);
         } else {
-          tempColor.copy(colMeadowOlive).lerp(colMeadowGolden, sunFacing * 0.4);
+          // Lush forest understory beneath maples and pines
+          tempColor.copy(colMeadowDarkVeg).lerp(colMeadowOlive, sunFacing * 0.55 + 0.30);
           if (vz > 15 && vx > 18) {
-            // Foreground right framing knoll
-            tempColor.lerp(colForegroundRich, 0.65);
+            tempColor.lerp(colForegroundRich, 0.55);
           }
         }
       }
@@ -238,8 +248,14 @@ export class Terrain {
     canvas.height = size;
     const ctx = canvas.getContext('2d')!;
 
-    // Base warm natural ivory-paper canvas wash (multiplies with vertex colors cleanly)
-    ctx.fillStyle = '#f4f0df';
+    // Base warm natural paper wash with subtle golden-green undertone
+    const baseGrad = ctx.createLinearGradient(0, 0, size, 0);
+    baseGrad.addColorStop(0.0, '#c8dcb0'); // Left meadow: luminous golden-green wash
+    baseGrad.addColorStop(0.48, '#bed2a5');
+    baseGrad.addColorStop(0.52, '#b2c49c'); // River channel bed
+    baseGrad.addColorStop(0.70, '#a4b88e'); // Right bluff
+    baseGrad.addColorStop(1.0, '#96aa80');
+    ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, size, size);
 
     const toCanvasX = (wx: number) => ((wx + 125) / 250) * size;
@@ -247,10 +263,10 @@ export class Terrain {
 
     // 1. Broad Sunlit Golden Pasture Washes on Left Meadow
     const goldenWashes = [
-      { x: -24, z: 0, r1: 30, r2: 380, col: 'rgba(255, 244, 168, 0.65)' },
-      { x: -22, z: -16, r1: 20, r2: 260, col: 'rgba(255, 248, 185, 0.52)' },
-      { x: -26, z: 14, r1: 20, r2: 290, col: 'rgba(255, 242, 172, 0.58)' },
-      { x: -34, z: -6, r1: 25, r2: 320, col: 'rgba(250, 240, 160, 0.50)' },
+      { x: -24, z: 0, r1: 30, r2: 380, col: 'rgba(242, 232, 160, 0.36)' },
+      { x: -22, z: -16, r1: 20, r2: 260, col: 'rgba(245, 235, 170, 0.32)' },
+      { x: -26, z: 14, r1: 20, r2: 290, col: 'rgba(240, 230, 162, 0.35)' },
+      { x: -34, z: -6, r1: 25, r2: 320, col: 'rgba(238, 228, 155, 0.30)' },
     ];
 
     goldenWashes.forEach((w) => {
@@ -332,10 +348,10 @@ export class Terrain {
 
     // Outer grassy verge blend (soft weathered loam)
     ctx.beginPath();
-    ctx.lineWidth = 28;
+    ctx.lineWidth = 54;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = 'rgba(195, 188, 142, 0.32)';
+    ctx.strokeStyle = 'rgba(182, 165, 122, 0.72)';
     pathPoints.forEach((p, idx) => {
       const px = toCanvasX(p.x);
       const pz = toCanvasZ(p.z);
@@ -346,10 +362,10 @@ export class Terrain {
 
     // Dirt trail core (warm weathered ochre-tan)
     ctx.beginPath();
-    ctx.lineWidth = 14;
+    ctx.lineWidth = 32;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = 'rgba(215, 185, 142, 0.55)';
+    ctx.strokeStyle = 'rgba(215, 186, 138, 0.95)';
     pathPoints.forEach((p, idx) => {
       const px = toCanvasX(p.x);
       const pz = toCanvasZ(p.z);
@@ -360,47 +376,15 @@ export class Terrain {
 
     // Weathered wheel ruts / trodden core
     ctx.beginPath();
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = 'rgba(175, 144, 105, 0.40)';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(165, 135, 95, 0.65)';
     pathPoints.forEach((p, idx) => {
-      const px = toCanvasX(p.x + Math.sin(idx * 0.5) * 0.15);
-      const pz = toCanvasZ(p.z + Math.cos(idx * 0.5) * 0.15);
+      const px = toCanvasX(p.x + Math.sin(idx * 0.5) * 0.25);
+      const pz = toCanvasZ(p.z + Math.cos(idx * 0.5) * 0.25);
       if (idx === 0) ctx.moveTo(px, pz);
       else ctx.lineTo(px, pz);
     });
     ctx.stroke();
-
-    // Embedded weathered stepping stones along trail approach
-    const trailStones = [
-      { x: -16, z: -10, r: 8 },
-      { x: -15, z: -6,  r: 8 },
-      { x: -13, z: -2,  r: 9 },
-      { x: -11, z: 2,   r: 8 },
-      { x: -9.5, z: 5,  r: 7 },
-    ];
-
-    trailStones.forEach((ts) => {
-      const sx = toCanvasX(ts.x);
-      const sz = toCanvasZ(ts.z);
-
-      // Stone shadow ring
-      ctx.beginPath();
-      ctx.ellipse(sx + 2, sz + 2, ts.r + 2, (ts.r + 2) * 0.75, 0.4, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(90, 80, 68, 0.35)';
-      ctx.fill();
-
-      // Stone body
-      ctx.beginPath();
-      ctx.ellipse(sx, sz, ts.r, ts.r * 0.72, 0.4, 0, Math.PI * 2);
-      ctx.fillStyle = '#b6ae9e';
-      ctx.fill();
-
-      // Sunlit stone top
-      ctx.beginPath();
-      ctx.ellipse(sx - 2, sz - 2, ts.r * 0.55, ts.r * 0.38, 0.4, 0, Math.PI * 2);
-      ctx.fillStyle = '#dcd4c6';
-      ctx.fill();
-    });
 
     // 3. Naturally Eroded Riverbank Cut-Bank Strata & Wet Shoreline
     // Trace the left riverbank contour
@@ -439,8 +423,8 @@ export class Terrain {
 
     // 4. Soft Dappled Tree Shadow Pools (watercolor falloff with sunlit light holes)
     const treeShadowPools = [
-      { x: -24 - 3.2, z: -19 + 3.4, r: 160 }, // Sakura over cottage
-      { x: -32 - 3.2, z: -14 + 3.4, r: 150 }, // Sakura grove slope
+      { x: -26 - 3.2, z: -22 + 3.4, r: 160 }, // Sakura over cottage
+      { x: -34 - 3.2, z: -16 + 3.4, r: 150 }, // Sakura grove slope
       { x: -16 - 3.0, z: -25 + 3.2, r: 140 }, // Broadleaf behind cottage
       { x: -21 - 3.2, z: -4 + 3.4,  r: 155 }, // Lower meadow oak
       { x: -25 - 3.2, z: 8 + 3.4,   r: 145 }, // Terrace oak
@@ -569,36 +553,62 @@ export class Terrain {
     const side = closestSample.tangent.x * toVertZ - closestSample.tangent.z * toVertX;
     const isLeftSide = side > 0;
 
+    // Organic shoreline undulation on right and left banks
+    let effectiveHalfWidth = halfWidth;
+    if (!isLeftSide) {
+      // Rocky shoreline promontories and cove inlets to break straight shoreline
+      const rightShoreCove = Math.sin(vz * 0.16 + 1.2) * 1.8 + Math.cos(vz * 0.35 + 0.4) * 1.1;
+      effectiveHalfWidth += rightShoreCove;
+    } else {
+      // Left Shore Guardian Monolith Promontory:
+      // The grassy meadow bank juts outward to firmly anchor the Guardian Monolith (Reference.png)
+      const monolithPromontory = Math.exp(-Math.pow((vz - -3.5) / 4.8, 2.0)) * 4.5;
+      effectiveHalfWidth -= monolithPromontory;
+    }
+
     let vy = closestSample.pos.y;
 
-    if (distToRiver < halfWidth) {
+    if (distToRiver < effectiveHalfWidth) {
       // Inside wide river channel: concave basin below water surface
-      const channelDepth = 1.8 * (1.0 - distToRiver / halfWidth);
+      const channelDepth = 1.8 * (1.0 - distToRiver / effectiveHalfWidth);
       vy -= channelDepth;
     } else {
-      const bankDist = distToRiver - halfWidth;
+      const bankDist = distToRiver - effectiveHalfWidth;
 
       if (isLeftSide) {
-        // Left Bank: Steep carved riverbank slope -> rolling terraced meadow
-        const cutBankRamp = THREE.MathUtils.smoothstep(bankDist, 0, 3.8);
-        const cutBankHeight = 2.2;
+        // Left Bank: Gentle grassy slope rolling naturally down to the water and gravel beach
+        const cutBankRamp = THREE.MathUtils.smoothstep(bankDist, 0, 6.0);
+        const cutBankHeight = 1.1;
 
-        const meadowRamp = THREE.MathUtils.smoothstep(bankDist, 2.5, 12.0);
+        const meadowRamp = THREE.MathUtils.smoothstep(bankDist, 3.0, 16.0);
         const rawHeight = (vx * 0.04 + vz * 0.03);
-        const terrace = Math.floor(rawHeight * 2.0) * 0.5 + Math.sin(rawHeight * 5.0) * 0.15;
-        const rollingKnolls = Math.sin(vx * 0.07) * 1.1 + Math.cos(vz * 0.06) * 1.0 + Math.sin(vx * 0.14 + vz * 0.12) * 0.45;
-        const plateauHeight = cutBankHeight + 1.8 + terrace + rollingKnolls;
+        const terrace = Math.floor(rawHeight * 2.0) * 0.4 + Math.sin(rawHeight * 4.0) * 0.12;
+        const rollingKnolls = Math.sin(vx * 0.07) * 0.9 + Math.cos(vz * 0.06) * 0.8 + Math.sin(vx * 0.14 + vz * 0.12) * 0.35;
+        const plateauHeight = cutBankHeight + 1.6 + terrace + rollingKnolls;
 
         vy += cutBankRamp * cutBankHeight + meadowRamp * (plateauHeight - cutBankHeight);
 
-        // Far left background hills
+        // Monolith promontory knoll (natural grassy shoulder supporting the Guardian Monolith)
+        const monolithKnoll = Math.exp(-Math.pow((vx - -17.5) / 4.5, 2.0) - Math.pow((vz - -3.5) / 4.5, 2.0)) * 1.45;
+        vy += monolithKnoll;
+
+        // Far left background hills (gated strictly to far-left territory vx < -16)
         const farLeftDist = Math.max(0, -vx - 16);
-        vy += Math.min(18, farLeftDist * 0.32 + Math.sin(vx * 0.08 + vz * 0.07) * 1.8);
+        if (farLeftDist > 0) {
+          const hillRamp = THREE.MathUtils.smoothstep(farLeftDist, 0, 6.0);
+          vy += hillRamp * Math.min(18, farLeftDist * 0.32 + Math.max(0, Math.sin(vx * 0.08 + vz * 0.07) * 1.8));
+        }
       } else {
         // Right Bank: Steep rocky bluff rising from the water with crags & ledges
         const bankRamp = THREE.MathUtils.smoothstep(bankDist, 0, 9.0);
         const bluffHeight = 6.8 + bankDist * 0.38 + Math.sin(vx * 0.08) * 2.2 + Math.cos(vz * 0.07) * 1.5;
         vy += bankRamp * bluffHeight;
+
+        // Towering canyon walls enclosing the upper gorge
+        if (vx > 36 && vz < -25) {
+          const gorgeElevation = Math.max(0, (vx - 36) * 0.45 + (-25 - vz) * 0.35);
+          vy += Math.min(22, gorgeElevation);
+        }
 
         // Foreground right framing knoll
         if (vx > 16 && vz > 18) {
@@ -619,8 +629,8 @@ export class Terrain {
       sampleY: closestSample.pos.y,
       isLeftSide,
       distToRiver,
-      bankDist: Math.max(0, distToRiver - halfWidth),
-      halfWidth,
+      bankDist: Math.max(0, distToRiver - effectiveHalfWidth),
+      halfWidth: effectiveHalfWidth,
     };
   }
 }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Terrain } from './Terrain';
 import { HeroRock } from './HeroRock';
 
@@ -27,37 +28,37 @@ export class Rocks {
     this.group.name = 'RocksGroup';
     this.terrain = terrain;
 
-    // 5 Distinct Painterly Anime Rock Material Families with Chiseled Planar Shading
+    // 5 Distinct Painterly Anime Rock Material Families with Smooth Shading
     this.materials = {
       warmGranite: new THREE.MeshStandardMaterial({
         vertexColors: true,
-        roughness: 0.88,
+        roughness: 0.82,
         metalness: 0.02,
-        flatShading: true,
+        flatShading: false,
       }),
       coolSlate: new THREE.MeshStandardMaterial({
         vertexColors: true,
-        roughness: 0.76,
+        roughness: 0.74,
         metalness: 0.04,
-        flatShading: true,
+        flatShading: false,
       }),
       paleRiverStone: new THREE.MeshStandardMaterial({
         vertexColors: true,
-        roughness: 0.82,
+        roughness: 0.78,
         metalness: 0.02,
-        flatShading: true,
+        flatShading: false,
       }),
       mossStone: new THREE.MeshStandardMaterial({
         vertexColors: true,
-        roughness: 0.92,
+        roughness: 0.88,
         metalness: 0.01,
-        flatShading: true,
+        flatShading: false,
       }),
       wetRiverRock: new THREE.MeshStandardMaterial({
         vertexColors: true,
-        roughness: 0.55, // Noticeably wetter, glistening surface sheen
+        roughness: 0.50, // Noticeably wetter, glistening surface sheen
         metalness: 0.08,
-        flatShading: true,
+        flatShading: false,
       }),
     };
 
@@ -70,49 +71,88 @@ export class Rocks {
       // ==========================================
       // 1. HERO ROCKS (3 Archetypes)
       // ==========================================
-      // Hero 1: Iconic Left Shore Guardian Monolith (tall, warm granite monolith)
+      // Hero 1: Iconic Left Shore Guardian Monolith (commanding warm granite monolith on left shoreline)
       {
         type: 'hero',
         family: 'warmGranite',
         variant: 0,
-        x: -18.0,
-        z: 0.5,
-        yOffset: 0.8,
-        scale: [8.5, 7.5, 7.8],
-        rotation: [0.06, 0.52, 0.04],
+        x: -14.5,
+        z: -3.8,
+        yOffset: -0.15,
+        scale: [4.8, 5.6, 4.2],
+        rotation: [0.06, 0.45, 0.02],
         mossAmount: 0.65,
         seed: 1.2,
       },
-      // Hero 2: Mid-Stream Rapids Island Splitter (cool slate slab parting chute)
+      // Hero 2: Mid-Stream Rapids Island Splitter (chiseled rapids slab with velvet moss shelf parting chute)
       {
         type: 'hero',
-        family: 'coolSlate',
+        family: 'warmGranite',
         variant: 1,
         x: 3.5,
-        z: -4.0,
-        yOffset: 0.95,
-        scale: [5.8, 3.6, 5.0],
-        rotation: [0.10, 0.75, -0.05],
-        mossAmount: 0.45,
+        z: -5.5,
+        yOffset: 0.0,
+        scale: [5.8, 3.8, 4.8],
+        rotation: [0.08, 0.65, -0.04],
+        mossAmount: 0.70,
         seed: 2.5,
       },
-      // Hero 3: Central Rapids Water-Worn Boulder (dark glistening wet river stone)
+      // Hero 3: Left Shore Shallows Stepping Slab (flat granite river slab jutting into clear turquoise shallows)
       {
         type: 'hero',
-        family: 'wetRiverRock',
+        family: 'paleRiverStone',
         variant: 2,
-        x: -4.0,
-        z: 6.0,
-        yOffset: 0.90,
-        scale: [4.8, 3.4, 4.2],
-        rotation: [-0.06, 1.25, 0.08],
-        mossAmount: 0.50,
+        x: -11.0,
+        z: 6.5,
+        yOffset: 0.0,
+        scale: [3.4, 1.2, 2.8],
+        rotation: [0.04, 0.35, -0.02],
+        mossAmount: 0.40,
         seed: 3.7,
       },
 
       // ==========================================
-      // 2. MEDIUM ROCKS (5 Archetypes / 9 Placements)
+      // 2. MEDIUM ROCKS & SHORE PROMONTORIES
       // ==========================================
+      // Right Bank Granite Promontory 1 (prominent sunlit granite bluff jutting into river)
+      {
+        type: 'medium',
+        family: 'warmGranite',
+        variant: 0,
+        x: 15.0,
+        z: -1.0,
+        yOffset: 0.20,
+        scale: [6.8, 5.0, 5.5],
+        rotation: [-0.10, 0.45, 0.08],
+        mossAmount: 0.35,
+        seed: 4.1,
+      },
+      // Right Bank Mid-Gorge Ledge 2
+      {
+        type: 'medium',
+        family: 'coolSlate',
+        variant: 1,
+        x: 19.0,
+        z: -11.0,
+        yOffset: 0.25,
+        scale: [6.0, 4.5, 5.2],
+        rotation: [0.15, -0.40, 0.10],
+        mossAmount: 0.40,
+        seed: 4.8,
+      },
+      // Right Bank Upper Gorge Bluff 3 (breaking upper right shoreline)
+      {
+        type: 'medium',
+        family: 'warmGranite',
+        variant: 2,
+        x: 25.0,
+        z: -22.0,
+        yOffset: 0.20,
+        scale: [7.2, 5.6, 6.0],
+        rotation: [0.08, 0.65, 0.0],
+        mossAmount: 0.30,
+        seed: 5.2,
+      },
       // Right Bank Granite Ledges meeting water
       {
         type: 'medium',
@@ -120,23 +160,35 @@ export class Rocks {
         variant: 0,
         x: 18.0,
         z: 4.0,
-        yOffset: 0.2,
-        scale: [7.2, 5.4, 5.8],
+        yOffset: 0.20,
+        scale: [6.5, 4.8, 5.2],
         rotation: [-0.12, 0.40, 0.10],
         mossAmount: 0.35,
-        seed: 4.1,
+        seed: 5.7,
       },
       {
         type: 'medium',
         family: 'warmGranite',
         variant: 1,
-        x: 11.0,
-        z: 14.0,
-        yOffset: -0.1,
-        scale: [5.4, 3.8, 4.4],
+        x: 12.0,
+        z: 9.0,
+        yOffset: 0.10,
+        scale: [5.8, 4.0, 4.8],
         rotation: [0.04, 1.10, -0.06],
-        mossAmount: 0.55,
-        seed: 5.3,
+        mossAmount: 0.50,
+        seed: 6.1,
+      },
+      {
+        type: 'medium',
+        family: 'warmGranite',
+        variant: 2,
+        x: 7.0,
+        z: 18.0,
+        yOffset: 0.05,
+        scale: [5.2, 3.6, 4.4],
+        rotation: [0.06, 0.85, -0.08],
+        mossAmount: 0.45,
+        seed: 6.4,
       },
 
       // Foreground Rapids Boulder (anchoring lower-left rapids)
@@ -153,43 +205,43 @@ export class Rocks {
         seed: 6.7,
       },
 
-      // Upper Sunlit Rapids Boulders (distant headwaters)
+      // Headwaters Gorge Canyon Cliff Enclosure (framing upper right river bend)
       {
         type: 'medium',
         family: 'warmGranite',
         variant: 3,
-        x: 26.0,
-        z: -24.0,
-        yOffset: 0.1,
-        scale: [5.2, 3.8, 4.5],
-        rotation: [0.08, 0.65, 0.0],
-        mossAmount: 0.25,
+        x: 48.0,
+        z: -44.0,
+        yOffset: 0.50,
+        scale: [10.5, 8.5, 9.0],
+        rotation: [0.05, 0.55, 0.0],
+        mossAmount: 0.20,
         seed: 7.9,
       },
       {
         type: 'medium',
         family: 'warmGranite',
         variant: 4,
-        x: 38.0,
-        z: -34.0,
-        yOffset: 0.2,
-        scale: [5.8, 4.2, 4.8],
+        x: 58.0,
+        z: -58.0,
+        yOffset: 0.60,
+        scale: [12.0, 10.0, 10.5],
         rotation: [-0.08, 0.35, 0.08],
-        mossAmount: 0.20,
+        mossAmount: 0.15,
         seed: 8.4,
       },
 
       // Left Bank Embedded Cut-Bank Rocks
       {
         type: 'medium',
-        family: 'mossStone',
+        family: 'warmGranite',
         variant: 0,
-        x: -14.0,
-        z: -8.0,
-        yOffset: 0.1,
-        scale: [3.2, 2.4, 2.8],
+        x: -16.5,
+        z: -7.0,
+        yOffset: 0.10,
+        scale: [3.6, 2.2, 3.0],
         rotation: [0.15, 0.82, -0.05],
-        mossAmount: 0.50,
+        mossAmount: 0.45,
         seed: 9.1,
       },
       {
@@ -201,7 +253,7 @@ export class Rocks {
         yOffset: 0.0,
         scale: [3.6, 2.6, 3.2],
         rotation: [-0.10, 1.40, 0.12],
-        mossAmount: 0.65,
+        mossAmount: 0.50,
         seed: 10.3,
       },
 
@@ -212,23 +264,11 @@ export class Rocks {
         variant: 1,
         x: 22.0,
         z: -14.0,
-        yOffset: 0.3,
+        yOffset: 0.30,
         scale: [4.0, 2.8, 3.4],
         rotation: [0.20, -0.45, 0.10],
         mossAmount: 0.30,
         seed: 11.6,
-      },
-      {
-        type: 'medium',
-        family: 'coolSlate',
-        variant: 3,
-        x: 16.0,
-        z: 10.0,
-        yOffset: 0.1,
-        scale: [3.4, 2.5, 3.0],
-        rotation: [-0.05, 0.70, -0.10],
-        mossAmount: 0.45,
-        seed: 12.8,
       },
 
       // ==========================================
@@ -237,26 +277,26 @@ export class Rocks {
       // Companion clusters around Guardian Monolith
       {
         type: 'small',
-        family: 'mossStone',
+        family: 'paleRiverStone',
         variant: 0,
-        x: -15.5,
-        z: 3.2,
-        yOffset: 0.0,
-        scale: [2.2, 1.6, 2.0],
+        x: -12.0,
+        z: 4.8,
+        yOffset: -0.1,
+        scale: [2.0, 1.4, 1.8],
         rotation: [0.1, 0.4, 0.1],
-        mossAmount: 0.70,
+        mossAmount: 0.40,
         seed: 13.2,
       },
       {
         type: 'small',
-        family: 'mossStone',
+        family: 'warmGranite',
         variant: 1,
-        x: -20.5,
-        z: -2.0,
+        x: -22.5,
+        z: -3.0,
         yOffset: 0.1,
         scale: [1.8, 1.3, 1.6],
         rotation: [-0.2, 1.1, 0.0],
-        mossAmount: 0.60,
+        mossAmount: 0.45,
         seed: 14.5,
       },
 
@@ -301,18 +341,6 @@ export class Rocks {
       },
 
       // Left Shore Shallows Stepping/Shoreline Stones
-      {
-        type: 'small',
-        family: 'paleRiverStone',
-        variant: 5,
-        x: -12.0,
-        z: 2.0,
-        yOffset: -0.1,
-        scale: [2.1, 1.4, 1.9],
-        rotation: [0.0, 0.5, 0.1],
-        mossAmount: 0.65,
-        seed: 18.2,
-      },
       {
         type: 'small',
         family: 'paleRiverStone',
@@ -429,21 +457,35 @@ export class Rocks {
 
     rockConfigs.forEach((cfg) => {
       const tInfo = this.terrain.getHeightAt(cfg.x, cfg.z);
-      const groundY = tInfo.y + (cfg.yOffset ?? 0);
+      const isRiverRock = tInfo.distToRiver < tInfo.halfWidth;
+
+      let groundY = tInfo.y + (cfg.yOffset ?? 0);
+      if (cfg.type === 'hero' && cfg.variant === 0) {
+        // Hero 1 (Guardian Monolith): firmly grounded into the meadow bank
+        groundY = tInfo.y + (cfg.yOffset ?? -0.15);
+      } else if (cfg.type === 'hero' && cfg.variant === 1) {
+        // Hero 2 (Splitter): seated in the rapids channel, parting the current
+        groundY = tInfo.sampleY - 0.35;
+      } else if (cfg.type === 'hero' && cfg.variant === 2) {
+        // Hero 3 (Stepping Slab): flat stone jutting into clear turquoise shallows
+        groundY = tInfo.sampleY - 0.25;
+      } else if (isRiverRock) {
+        // River rocks sit deep in the riverbed so their base is firmly anchored
+        groundY = Math.min(tInfo.sampleY - 0.35, tInfo.y + (cfg.yOffset ?? 0));
+      }
+
       const family = cfg.family ?? (cfg.type === 'hero' ? 'warmGranite' : 'paleRiverStone');
 
-      // Phase 3B.1: Replace Hero 1 (Guardian Monolith) with authored anime asset
-      if (cfg.type === 'hero' && cfg.variant === 0) {
-        const authoredMesh = HeroRock.createMesh(cfg, groundY);
+      // Route all hero rock variants to authored anime HeroRock asset
+      if (cfg.type === 'hero') {
+        const authoredMesh = HeroRock.createMesh(cfg, groundY, tInfo.sampleY);
         this.group.add(authoredMesh);
         return;
       }
 
       let geo: THREE.BufferGeometry;
 
-      if (cfg.type === 'hero') {
-        geo = this.createHeroRockGeometry(cfg.variant, cfg.seed, cfg.mossAmount, family, groundY, cfg.scale[1], tInfo.sampleY);
-      } else if (cfg.type === 'medium') {
+      if (cfg.type === 'medium') {
         geo = this.createMediumRockGeometry(cfg.variant, cfg.seed, cfg.mossAmount, family, groundY, cfg.scale[1], tInfo.sampleY);
       } else {
         geo = this.createSmallRockGeometry(cfg.variant, cfg.seed, cfg.mossAmount, family, groundY, cfg.scale[1], tInfo.sampleY);
@@ -509,7 +551,7 @@ export class Rocks {
       const d1 = 0.52 * baseRadius * Math.min(aspectY, aspectXZ);
       const dot1 = vertex.dot(n1);
       if (dot1 > d1) {
-        vertex.addScaledVector(n1, -(dot1 - d1) * 0.68);
+        vertex.addScaledVector(n1, -(dot1 - d1));
       }
 
       // Plane 2: Steep shaded fracture plane (-X, +Y, +Z)
@@ -517,15 +559,15 @@ export class Rocks {
       const d2 = 0.58 * baseRadius * Math.min(aspectY, aspectXZ);
       const dot2 = vertex.dot(n2);
       if (dot2 > d2) {
-        vertex.addScaledVector(n2, -(dot2 - d2) * 0.65);
+        vertex.addScaledVector(n2, -(dot2 - d2));
       }
 
-      // Plane 3: Weathered horizontal top shelf (+Y)
-      const n3 = new THREE.Vector3(0.12, 0.98, -0.10).normalize();
-      const d3 = 0.44 * baseRadius * aspectY;
+      // Plane 3: Natural sloped crest facet
+      const n3 = new THREE.Vector3(0.28, 0.88, -0.38).normalize();
+      const d3 = 0.62 * baseRadius * aspectY;
       const dot3 = vertex.dot(n3);
       if (dot3 > d3) {
-        vertex.addScaledVector(n3, -(dot3 - d3) * 0.62);
+        vertex.addScaledVector(n3, -(dot3 - d3));
       }
 
       // Plane 4: Lateral diagonal facet
@@ -533,20 +575,20 @@ export class Rocks {
       const d4 = 0.62 * baseRadius * aspectXZ;
       const dot4 = vertex.dot(n4);
       if (dot4 > d4) {
-        vertex.addScaledVector(n4, -(dot4 - d4) * 0.60);
+        vertex.addScaledVector(n4, -(dot4 - d4));
       }
 
-      // Flatten base so stone embeds solidly into riverbed or terrain
-      if (vertex.y < -0.15 * baseRadius * aspectY) {
-        vertex.y *= 0.50;
+      // Solid grounded base extending downward into riverbed or terrain
+      if (vertex.y < 0) {
+        vertex.y *= 1.30;
       }
 
       basePos.setXYZ(i, vertex.x, vertex.y, vertex.z);
     }
 
-    // Convert to non-indexed geometry so each triangle is a distinct planar facet
-    const geo = baseGeo.toNonIndexed();
-    geo.computeVertexNormals();
+    // Compute smooth averaged vertex normals across shared vertices
+    baseGeo.computeVertexNormals();
+    const geo = baseGeo;
 
     const pos = geo.attributes.position;
     const vertexCount = pos.count;
@@ -564,35 +606,35 @@ export class Rocks {
         sunlit: new THREE.Color(0xe4d8c0),   // Warm radiant buff granite
         shadow: new THREE.Color(0x5a5048),   // Warm slate shadow
         underside: new THREE.Color(0x28201a),// Deep dark underside
-        moss: new THREE.Color(0x769e3e),     // Soft olive moss cap
+        moss: new THREE.Color(0x6b8e38),     // Soft olive moss cap
         waterline: new THREE.Color(0x221c16),// Dark damp stone
       },
       coolSlate: {
         sunlit: new THREE.Color(0xb0c4d0),   // Cool bluish-gray slate
         shadow: new THREE.Color(0x38444e),   // Deep cool slate shadow
         underside: new THREE.Color(0x1a2228),
-        moss: new THREE.Color(0x5c7a4a),
+        moss: new THREE.Color(0x547244),
         waterline: new THREE.Color(0x161c20),
       },
       paleRiverStone: {
         sunlit: new THREE.Color(0xede4d4),   // Pale water-worn river limestone
         shadow: new THREE.Color(0x787062),
         underside: new THREE.Color(0x383228),
-        moss: new THREE.Color(0x7e944c),
+        moss: new THREE.Color(0x728846),
         waterline: new THREE.Color(0x28241c),
       },
       mossStone: {
-        sunlit: new THREE.Color(0xc0c4b2),
-        shadow: new THREE.Color(0x424e3c),
+        sunlit: new THREE.Color(0xc6cca8),
+        shadow: new THREE.Color(0x465240),
         underside: new THREE.Color(0x1e241a),
-        moss: new THREE.Color(0x6eb034),     // Rich vibrant velvet moss
+        moss: new THREE.Color(0x527630),     // Rich natural velvet olive moss
         waterline: new THREE.Color(0x182014),
       },
       wetRiverRock: {
         sunlit: new THREE.Color(0x86989a),   // Dark water-slick rapids rock
         shadow: new THREE.Color(0x283238),
         underside: new THREE.Color(0x12181c),
-        moss: new THREE.Color(0x486438),
+        moss: new THREE.Color(0x425c34),
         waterline: new THREE.Color(0x0e1418),// Deep wet waterline
       },
     };
@@ -608,7 +650,7 @@ export class Rocks {
       norm.fromBufferAttribute(normAttr, i);
 
       const sunFactor = norm.dot(sunDir);
-      const isTop = norm.y > 0.44;
+      const isTop = norm.y > 0.60;
 
       // Clean planar light/shadow separation for anime brush-plane look
       if (sunFactor > 0.05) {
@@ -626,8 +668,8 @@ export class Rocks {
       // Moss cap on upward-facing surfaces with organic boundary
       if (isTop && mossAmount > 0) {
         const mossNoise = Math.sin(vertex.x * 3.5 + seed) * 0.08 + Math.cos(vertex.z * 3.5) * 0.08;
-        const mossBlend = THREE.MathUtils.clamp((norm.y - 0.44 + mossNoise) / 0.38, 0, 1) * mossAmount;
-        tempColor.lerp(pal.moss, mossBlend * 0.85);
+        const mossBlend = THREE.MathUtils.clamp((norm.y - 0.60 + mossNoise) / 0.32, 0, 1) * mossAmount;
+        tempColor.lerp(pal.moss, mossBlend * 0.72);
       }
 
       // Dark wet waterline where stone meets the river water elevation
@@ -646,28 +688,7 @@ export class Rocks {
     }
 
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    return geo;
-  }
-
-  private createHeroRockGeometry(
-    variant: number,
-    seed: number,
-    moss: number,
-    family: RockMaterialFamily,
-    groundY: number,
-    scaleY: number,
-    sampleY: number
-  ): THREE.BufferGeometry {
-    if (variant === 0) {
-      // Tall monolith - narrow and tall, slightly asymmetrical weathered top
-      return this.generateSmoothWeatheredGeometry(1.0, 1.25, 0.92, seed, moss, 0.14, family, groundY, scaleY, sampleY);
-    } else if (variant === 1) {
-      // Wide flat rapids slab - broad water-worn platform
-      return this.generateSmoothWeatheredGeometry(1.0, 0.65, 1.28, seed, moss, 0.16, family, groundY, scaleY, sampleY);
-    } else {
-      // Angular crag boulder - weathered river stone
-      return this.generateSmoothWeatheredGeometry(1.0, 0.85, 1.05, seed, moss, 0.18, family, groundY, scaleY, sampleY);
-    }
+    return BufferGeometryUtils.toCreasedNormals(geo, THREE.MathUtils.degToRad(28));
   }
 
   private createMediumRockGeometry(

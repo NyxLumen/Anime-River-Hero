@@ -23,11 +23,11 @@ export class Renderer {
     // Color management & tone mapping for anime painterly warmth
     this.instance.outputColorSpace = THREE.SRGBColorSpace;
     this.instance.toneMapping = THREE.ACESFilmicToneMapping;
-    this.instance.toneMappingExposure = 1.05;
+    this.instance.toneMappingExposure = 1.10;
 
     // Soft shadow mapping for painterly anime transitions
     this.instance.shadowMap.enabled = true;
-    this.instance.shadowMap.type = THREE.PCFShadowMap;
+    this.instance.shadowMap.type = THREE.PCFSoftShadowMap;
   }
 
   public resize(width: number, height: number): void {

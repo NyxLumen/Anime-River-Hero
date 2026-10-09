@@ -15,6 +15,7 @@ export class Cottage {
     const groundY = this.terrain.getHeightAt(posX, posZ).y;
 
     this.group.position.set(posX, groundY, posZ);
+    this.group.scale.set(1.25, 1.25, 1.25);
     this.group.rotation.y = 0.82;
 
     this.buildCottage();
@@ -23,41 +24,34 @@ export class Cottage {
   private buildCottage(): void {
     // 1. Materials
     const woodTimberMat = new THREE.MeshStandardMaterial({
-      color: 0x5a4432, // Weathered dark timber beams
-      roughness: 0.92,
-      metalness: 0.02,
-    });
-
-    const wallPlasterMat = new THREE.MeshStandardMaterial({
-      color: 0xd6cbb4, // Warm Japanese earthen plaster
-      roughness: 0.95,
-      metalness: 0.01,
-    });
-
-    const porchWoodMat = new THREE.MeshStandardMaterial({
-      color: 0x8a7258, // Warm cedar/cypress engawa boards
+      color: 0x68503a, // Weathered warm cedar timber beams
       roughness: 0.88,
       metalness: 0.02,
     });
 
-    const roofMat = new THREE.MeshStandardMaterial({
-      color: 0x483a30, // Weathered thatch & charcoal tile
-      roughness: 0.94,
+    const wallPlasterMat = new THREE.MeshStandardMaterial({
+      color: 0xe6dbc8, // Luminous warm Japanese earthen plaster
+      roughness: 0.92,
+      metalness: 0.01,
+    });
+
+    const porchWoodMat = new THREE.MeshStandardMaterial({
+      color: 0x9a8064, // Warm cedar/cypress engawa boards
+      roughness: 0.86,
       metalness: 0.02,
-      flatShading: false,
     });
 
     const roofMossMat = new THREE.MeshStandardMaterial({
-      color: 0x4a5a36, // Mossy north-facing thatch
-      roughness: 0.92,
+      color: 0x5e7242, // Mossy thatch ridge
+      roughness: 0.90,
       metalness: 0.02,
     });
 
     const windowGlassMat = new THREE.MeshStandardMaterial({
-      color: 0xf5e1a2, // Warm paper shoji glow
-      emissive: 0xb58032,
-      emissiveIntensity: 0.45,
-      roughness: 0.60,
+      color: 0xffe8a8, // Warm paper shoji glow
+      emissive: 0xc89240,
+      emissiveIntensity: 0.60,
+      roughness: 0.55,
       metalness: 0.05,
     });
 
@@ -136,35 +130,102 @@ export class Cottage {
     door.castShadow = true;
     this.group.add(door);
 
-    // 7. Traditional Gabled Thatched Roof
-    // Main roof pyramid / hip
-    const roofGeo = new THREE.ConeGeometry(3.8, 2.1, 4);
-    roofGeo.rotateY(Math.PI / 4);
-    roofGeo.scale(1.28, 1.0, 1.05);
+    // 7. Traditional Japanese Hipped-Gable Thatched & Timber Roof
+    // Main roof structure with graceful flared eaves and wide protective overhang
+    const roofGroup = new THREE.Group();
+    
+    // Low-pitch hipped roof body
+    const roofWidth = 5.8;
+    const roofDepth = 4.8;
+    const roofHeight = 2.1;
+    
+    // Sloped roof panels (front, back, left, right)
+    const frontRoofGeo = new THREE.BufferGeometry();
+    // Front slope vertices: trapezoid from ridge to eave
+    const rHalfW = roofWidth * 0.5;
+    const rHalfD = roofDepth * 0.5;
+    const ridgeHalfW = 1.8;
+    
+    const roofVerts = [
+      // Front plane (towards engawa +Z)
+      -ridgeHalfW, roofHeight, 0.2,
+       ridgeHalfW, roofHeight, 0.2,
+       rHalfW, 0.0, rHalfD,
+      -ridgeHalfW, roofHeight, 0.2,
+       rHalfW, 0.0, rHalfD,
+      -rHalfW, 0.0, rHalfD,
 
-    // Flare out eaves slightly
-    const pos = roofGeo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      const y = pos.getY(i);
-      if (y < -0.2) {
-        pos.setX(i, pos.getX(i) * 1.12);
-        pos.setZ(i, pos.getZ(i) * 1.12);
-      }
-    }
-    roofGeo.computeVertexNormals();
+      // Back plane (-Z)
+       ridgeHalfW, roofHeight, -0.2,
+      -ridgeHalfW, roofHeight, -0.2,
+      -rHalfW, 0.0, -rHalfD,
+       ridgeHalfW, roofHeight, -0.2,
+      -rHalfW, 0.0, -rHalfD,
+       rHalfW, 0.0, -rHalfD,
 
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.position.y = 3.85;
-    roof.castShadow = true;
-    roof.receiveShadow = true;
-    this.group.add(roof);
+      // Left hip slope (-X)
+      -ridgeHalfW, roofHeight, -0.2,
+      -ridgeHalfW, roofHeight, 0.2,
+      -rHalfW, 0.0, rHalfD,
+      -ridgeHalfW, roofHeight, -0.2,
+      -rHalfW, 0.0, rHalfD,
+      -rHalfW, 0.0, -rHalfD,
 
-    // Moss accent strip along roof ridge
-    const ridgeGeo = new THREE.BoxGeometry(3.6, 0.25, 0.45);
+      // Right hip slope (+X)
+       ridgeHalfW, roofHeight, 0.2,
+       ridgeHalfW, roofHeight, -0.2,
+       rHalfW, 0.0, -rHalfD,
+       ridgeHalfW, roofHeight, 0.2,
+       rHalfW, 0.0, -rHalfD,
+       rHalfW, 0.0, rHalfD,
+    ];
+    frontRoofGeo.setAttribute('position', new THREE.Float32BufferAttribute(roofVerts, 3));
+    frontRoofGeo.computeVertexNormals();
+
+    const darkRoofMat = new THREE.MeshStandardMaterial({
+      color: 0x483e34, // Dark weathered cedar timber shingles & thatch
+      roughness: 0.88,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+    });
+
+    const roofMesh = new THREE.Mesh(frontRoofGeo, darkRoofMat);
+    roofMesh.position.y = 2.80;
+    roofMesh.castShadow = true;
+    roofMesh.receiveShadow = true;
+    roofGroup.add(roofMesh);
+
+    // Ridge cap timber beam
+    const ridgeGeo = new THREE.BoxGeometry(4.0, 0.32, 0.55);
     const ridge = new THREE.Mesh(ridgeGeo, roofMossMat);
-    ridge.position.y = 4.80;
+    ridge.position.y = 4.90;
     ridge.castShadow = true;
-    this.group.add(ridge);
+    roofGroup.add(ridge);
+
+    // Eaves fascia board framing
+    const fasciaFront = new THREE.Mesh(new THREE.BoxGeometry(roofWidth + 0.2, 0.14, 0.16), woodTimberMat);
+    fasciaFront.position.set(0, 2.78, rHalfD);
+    roofGroup.add(fasciaFront);
+    const fasciaBack = new THREE.Mesh(new THREE.BoxGeometry(roofWidth + 0.2, 0.14, 0.16), woodTimberMat);
+    fasciaBack.position.set(0, 2.78, -rHalfD);
+    roofGroup.add(fasciaBack);
+
+    this.group.add(roofGroup);
+
+    // Small rustic mountain outbuilding / storehouse nestled behind under the cherry trees
+    const shedGroup = new THREE.Group();
+    const shedWalls = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.8, 2.0), wallPlasterMat);
+    shedWalls.position.set(-4.5, 0.9, -3.2);
+    shedWalls.castShadow = true;
+    shedGroup.add(shedWalls);
+
+    const shedRoof = new THREE.Mesh(new THREE.ConeGeometry(2.2, 1.2, 4), darkRoofMat);
+    shedRoof.rotateY(Math.PI / 4);
+    shedRoof.position.set(-4.5, 2.4, -3.2);
+    shedRoof.castShadow = true;
+    shedGroup.add(shedRoof);
+
+    this.group.add(shedGroup);
 
     // 8. Engawa (Raised Porch Deck)
     const porchGeo = new THREE.BoxGeometry(4.8, 0.16, 1.0);

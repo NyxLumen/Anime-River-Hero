@@ -23,12 +23,13 @@ async function capture() {
 
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
+  await page.setCacheEnabled(false);
 
   page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
   page.on('pageerror', (err) => console.error('PAGE ERROR:', err));
 
   console.log('Navigating to http://localhost:4173 ...');
-  await page.goto('http://localhost:4173', { waitUntil: 'networkidle0', timeout: 15000 });
+  await page.goto('http://localhost:4173', { waitUntil: 'domcontentloaded', timeout: 15000 });
 
   console.log('Waiting 3.5 seconds for shaders and scene render loop...');
   await new Promise((r) => setTimeout(r, 3500));

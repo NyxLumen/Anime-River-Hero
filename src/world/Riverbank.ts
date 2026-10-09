@@ -58,14 +58,14 @@ export class Riverbank {
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
-    // Material variety: wet river pebble, sunlit granite gravel, cool slate, mossy stone
+    // Material variety: sunlit warm granite gravel, pale river limestone, warm river silt, moss stone
     const pebblePalette = [
-      new THREE.Color(0xd2c6b6), // Sunlit warm granite pebble
-      new THREE.Color(0x323632), // Wet dark waterline pebble
-      new THREE.Color(0x7a888c), // Cool slate river gravel
-      new THREE.Color(0x647c46), // Moss-dusted shoreline pebble
-      new THREE.Color(0x9a8e7d), // Earthen bank gravel
-      new THREE.Color(0xe0d8c8), // Pale water-worn limestone pebble
+      new THREE.Color(0xd8cca8), // Sunlit warm granite pebble
+      new THREE.Color(0x6a6456), // Wet warm river gravel
+      new THREE.Color(0x8a9896), // Cool slate river gravel
+      new THREE.Color(0x768c58), // Moss-dusted shoreline pebble
+      new THREE.Color(0xb2a48e), // Earthen bank gravel
+      new THREE.Color(0xe4dac8), // Pale water-worn limestone pebble
     ];
 
     const dummy = new THREE.Object3D();
@@ -75,6 +75,12 @@ export class Riverbank {
     const sampleCount = 80;
     for (let i = 0; i < sampleCount && placed < stoneCount; i++) {
       const t = i / sampleCount;
+
+      // Cluster pebbles naturally in calm shallow bays and gravel bars (t: 0.35 .. 0.75)
+      // leaving steep bluffs and rapids rocky edges clean
+      const inGravelBarZone = (t > 0.32 && t < 0.78) || seededRandom(i * 4.3) > 0.65;
+      if (!inGravelBarZone) continue;
+
       const center = this.riverCurve.getPointAt(t);
       const tangent = this.riverCurve.getTangentAt(t).normalize();
       const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
@@ -90,16 +96,17 @@ export class Riverbank {
       );
       const halfW = width * 0.5;
 
-      // Cluster 2-5 stones at this sample
-      const clusterSize = Math.floor(seededRandom(i * 3.1) * 4) + 1;
+      // Cluster 3-6 stones at this gravel bar
+      const clusterSize = Math.floor(seededRandom(i * 3.1) * 4) + 2;
       for (let s = 0; s < clusterSize && placed < stoneCount; s++) {
-        const side = seededRandom(i * 5.7 + s * 1.3) > 0.35 ? 1 : -1;
-        const bankOffset = (seededRandom(i * 7.1 + s) - 0.45) * 1.8;
+        // Gravel bars mostly form along the left shallow bank
+        const side = seededRandom(i * 5.7 + s * 1.3) > 0.25 ? -1 : 1;
+        const bankOffset = (seededRandom(i * 7.1 + s) - 0.35) * 2.2;
         const dist = (side === 1 ? halfW : -halfW) + (side * bankOffset);
 
         const pos = center.clone().addScaledVector(normal, dist);
-        pos.x += (seededRandom(i * 9.2 + s * 2.1) - 0.5) * 1.5;
-        pos.z += (seededRandom(i * 11.4 + s * 3.1) - 0.5) * 1.5;
+        pos.x += (seededRandom(i * 9.2 + s * 2.1) - 0.5) * 1.8;
+        pos.z += (seededRandom(i * 11.4 + s * 3.1) - 0.5) * 1.8;
 
         const tInfo = this.terrain.getHeightAt(pos.x, pos.z);
         const y = Math.max(center.y - 0.12, tInfo.y - 0.04);
@@ -110,15 +117,15 @@ export class Riverbank {
           seededRandom(i + s * 2) * Math.PI * 2,
           seededRandom(i + s * 3) * 0.4
         );
-        const scale = 0.50 + seededRandom(i * 13.5 + s) * 0.95;
-        dummy.scale.set(scale, scale * 0.75, scale);
+        const scale = 0.45 + seededRandom(i * 13.5 + s) * 0.85;
+        dummy.scale.set(scale, scale * 0.70, scale);
         dummy.updateMatrix();
 
         mesh.setMatrixAt(placed, dummy.matrix);
 
         const isNearWater = y <= center.y + 0.08;
-        if (isNearWater) {
-          tempCol.copy(pebblePalette[1]); // Dark wet pebble
+        if (isNearWater && seededRandom(i * 19.1 + s) > 0.5) {
+          tempCol.copy(pebblePalette[1]); // Wet river pebble
         } else {
           const colIdx = Math.floor(seededRandom(i * 17.3 + s * 2.7) * pebblePalette.length);
           tempCol.copy(pebblePalette[colIdx]);
